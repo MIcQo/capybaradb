@@ -29,7 +29,9 @@ func TestServer_Run(t *testing.T) {
 	if err != nil {
 		t.Error("could not connect to server: ", err)
 	}
-	defer conn.Close()
+	defer func(conn net.Conn) {
+		_ = conn.Close()
+	}(conn)
 }
 
 func TestServer_Request(t *testing.T) {
@@ -56,7 +58,9 @@ func TestServer_Request(t *testing.T) {
 			if err != nil {
 				t.Error("could not connect to TCP server: ", err)
 			}
-			defer conn.Close()
+			defer func(conn net.Conn) {
+				_ = conn.Close()
+			}(conn)
 
 			if _, err := conn.Write(tc.payload); err != nil {
 				t.Error("could not write payload to TCP server:", err)
@@ -64,7 +68,7 @@ func TestServer_Request(t *testing.T) {
 
 			out := make([]byte, 1024)
 			if _, err := conn.Read(out); err == nil {
-				if bytes.Compare(out, tc.want) == 0 {
+				if bytes.Equal(out, tc.want) {
 					t.Error("response did match expected output")
 				}
 			} else {

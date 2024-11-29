@@ -1,3 +1,4 @@
+// Package tcp contains the TCP Server
 package tcp
 
 import (
@@ -7,10 +8,12 @@ import (
 	"net"
 )
 
+// NewServer creates a new TCP Server
 func NewServer(port uint) *Server {
 	return &Server{port: port}
 }
 
+// Server represents the TCP Server
 type Server struct {
 	port   uint
 	server net.Listener
@@ -37,8 +40,8 @@ func (s *Server) addr() string {
 
 func (s *Server) handleConnections() (err error) {
 	for {
-		conn, err := s.server.Accept()
-		if err != nil || conn == nil {
+		conn, acceptErr := s.server.Accept()
+		if acceptErr != nil || conn == nil {
 			err = errors.New("could not accept connection")
 			break
 		}
@@ -49,18 +52,20 @@ func (s *Server) handleConnections() (err error) {
 }
 
 func (s *Server) handleConnection(conn net.Conn) {
-	defer conn.Close()
+	defer func(conn net.Conn) {
+		_ = conn.Close()
+	}(conn)
 
 	rw := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 	for {
 		req, err := rw.ReadString('\n')
 		if err != nil {
-			rw.WriteString("failed to read input")
-			rw.Flush()
+			_, _ = rw.WriteString("failed to read input")
+			_ = rw.Flush()
 			return
 		}
 
-		rw.WriteString(fmt.Sprintf("Request received: %s", req))
-		rw.Flush()
+		_, _ = rw.WriteString(fmt.Sprintf("Request received: %s", req))
+		_ = rw.Flush()
 	}
 }

@@ -12,7 +12,7 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Displays the version information",
 	Long:  `Displays detailed information about the build version, build date, code name, and runtime details.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		var info = version.AppInfo()
 
 		fmt.Printf("Version:    %s\n", info.Version)

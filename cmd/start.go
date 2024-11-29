@@ -1,6 +1,3 @@
-/*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -30,7 +27,7 @@ const (
 	defaultMetricsPort = 8080
 )
 
-var ServerGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
+var serverGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "capybaradb",
 	Name:      "info",
 	Help:      "Shows the CapybaraDB version",
@@ -40,9 +37,9 @@ var ServerGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
 var startServerCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start the CapybaraDB server",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		var info = version.AppInfo()
-		ServerGauge.
+		serverGauge.
 			WithLabelValues(
 				info.Version,
 				info.BuildDate,

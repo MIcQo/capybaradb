@@ -1,3 +1,4 @@
+// Package metrics contains the metrics server
 package metrics
 
 import (
@@ -8,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// NewServer creates a new metrics server
 func NewServer(port uint, endpoint string) *Server {
 	return &Server{
 		port:     port,
@@ -15,11 +17,13 @@ func NewServer(port uint, endpoint string) *Server {
 	}
 }
 
+// Server represents the metrics server
 type Server struct {
 	port     uint
 	endpoint string
 }
 
+// Start starts the metrics server
 func (s *Server) Start() error {
 	logrus.WithField("port", s.port).
 		Debug("Starting metrics server")

@@ -17,13 +17,12 @@ var rootCmd = &cobra.Command{
 	Long: `CapybaraDB is a high-performance, ACID-compliant database 
 designed for both transactional and analytical workloads. 
 It supports clustering and hybrid storage models (row and column-oriented).`,
-	// Funkcia vykonaná, keď nie je uvedený žiadny podpríkaz
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		fmt.Println("Welcome to CapybaraDB!")
 		fmt.Println("Use the --help flag to see available commands.")
 	},
 
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+	PersistentPreRun: func(cmd *cobra.Command, _ []string) {
 		debug, _ := cmd.Flags().GetBool("debug")
 		if debug {
 			logrus.Info("Debug mode enabled")
@@ -47,8 +46,6 @@ func Execute() {
 		os.Exit(1)
 	}
 }
-
-var Debug bool
 
 func init() {
 	// Here you will define your flags and configuration settings.

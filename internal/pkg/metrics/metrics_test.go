@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -28,7 +29,9 @@ func TestMetricsEndpoint(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Could not send GET request: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
 
 	// Test if we get 200
 	if resp.StatusCode != http.StatusOK {
