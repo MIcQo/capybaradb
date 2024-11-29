@@ -3,6 +3,7 @@ package cmd
 import (
 	"capybaradb/internal/pkg/version"
 	"fmt"
+
 	"github.com/spf13/cobra"
 )
 

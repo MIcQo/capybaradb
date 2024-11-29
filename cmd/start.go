@@ -7,11 +7,12 @@ import (
 	"capybaradb/internal/pkg/metrics"
 	"capybaradb/internal/pkg/tcp"
 	"capybaradb/internal/pkg/version"
+	"os/signal"
+	"syscall"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sirupsen/logrus"
-	"os/signal"
-	"syscall"
 
 	"github.com/spf13/cobra"
 )

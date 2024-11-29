@@ -2,9 +2,10 @@ package metrics
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
-	"net/http"
 )
 
 func NewServer(port uint, endpoint string) *Server {
