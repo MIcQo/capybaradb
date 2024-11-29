@@ -15,9 +15,9 @@ GOARCH ?= arm64
 
 build-binary:
 	@$(ARGS) GOOS=${GOOS} GOARCH=${GOARCH}  go build -ldflags "-s -w \
-		-X capybaradb/cmd.Version=$(VERSION) \
-		-X capybaradb/cmd.Codename=$(CODENAME) \
-		-X capybaradb/cmd.BuildDate=$(DATE)" \
+		-X capybaradb/internal/pkg/version.Version=$(VERSION) \
+		-X capybaradb/internal/pkg/version.Codename=$(CODENAME) \
+		-X capybaradb/internal/pkg/version.BuildDate=$(DATE)" \
 		-o "./build/${GOOS}/${GOARCH}/"
 
 	@zip -r release/${BINARY_NAME}-${VERSION}-${GOOS}-${GOARCH}.zip build/${GOOS}/${GOARCH}/*
