@@ -7,12 +7,22 @@ import (
 	"net/http"
 )
 
-func StartMetricsServer(port uint) {
-	logrus.WithField("port", port).
+func NewServer(port uint, endpoint string) *Server {
+	return &Server{
+		port:     port,
+		endpoint: endpoint,
+	}
+}
+
+type Server struct {
+	port     uint
+	endpoint string
+}
+
+func (s *Server) Start() error {
+	logrus.WithField("port", s.port).
 		Debug("Starting metrics server")
 
-	http.Handle("/metrics", promhttp.Handler())
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
-		logrus.Fatal(err)
-	}
+	http.Handle(s.endpoint, promhttp.Handler())
+	return http.ListenAndServe(fmt.Sprintf(":%d", s.port), nil)
 }

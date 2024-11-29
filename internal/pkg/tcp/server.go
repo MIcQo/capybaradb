@@ -18,6 +18,7 @@ type Server struct {
 
 // Start starts the TCP Server
 func (s *Server) Start() (err error) {
+
 	s.server, err = net.Listen("tcp", s.addr())
 	if err != nil {
 		return
