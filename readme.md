@@ -1,4 +1,4 @@
-# CapybaraDB in Go
+# 🦫 CapybaraDB in Go  🦫
 
 ## Project Goal
 The goal of this project is to create a high-performance, scalable, and versatile database system written in Go. This database aims to support both **ACID compliance** and **clustering**, offering robust features for modern applications. It is designed to handle **column-oriented** and **row-oriented** storage, providing flexibility for both transactional and analytical workloads.
@@ -36,7 +36,8 @@ Go is chosen as the primary language due to its:
 ---
 
 ## Why Capybara DB?
-Because capybaras are awesome!
+Because capybaras are awesome! 🦫
+
 
 ---
 
