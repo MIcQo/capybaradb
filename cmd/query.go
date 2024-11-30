@@ -2,6 +2,7 @@
 package cmd
 
 import (
+	"capybaradb/internal/pkg/config"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -13,10 +14,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-)
-
-const (
-	defaultHost = "127.0.0.1"
 )
 
 // queryCmd represents the query command
@@ -103,21 +100,11 @@ var queryCmd = &cobra.Command{
 }
 
 func init() {
-	queryCmd.PersistentFlags().String("host", defaultHost, "Host to connect to")
-	queryCmd.PersistentFlags().Uint("port", defaultDatabasePort, "Port to connect to")
+	queryCmd.PersistentFlags().String("host", config.DefaultHost, "Host to connect to")
+	queryCmd.PersistentFlags().Uint("port", config.DefaultDatabasePort, "Port to connect to")
 	queryCmd.PersistentFlags().BoolP("interactive", "i", false, "Enable interactive mode")
 
 	rootCmd.AddCommand(queryCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// queryCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// queryCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func sendAndReadResponse(srv net.Conn, query string) {

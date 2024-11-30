@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"capybaradb/internal/pkg/config"
 	"capybaradb/internal/pkg/metrics"
 	"capybaradb/internal/pkg/tcp"
 	"capybaradb/internal/pkg/version"
@@ -12,19 +13,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
-)
-
-const (
-	// defaultDatabasePort is the default port for the database server
-	defaultDatabasePort = 2121
-)
-
-const (
-	// defaultMetricsEndpoint is the default endpoint for the metrics server
-	defaultMetricsEndpoint = "/metrics"
-
-	// defaultMetricsPort is the default port for the metrics server
-	defaultMetricsPort = 8080
 )
 
 var serverGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -80,8 +68,8 @@ func init() {
 	rootCmd.AddCommand(startServerCmd)
 
 	// Here you will define your flags and configuration settings.
-	startServerCmd.PersistentFlags().Uint("port", defaultDatabasePort, "Port for the database server")
+	startServerCmd.PersistentFlags().Uint("port", config.DefaultDatabasePort, "Port for the database server")
 
-	startServerCmd.PersistentFlags().Uint("metricsPort", defaultMetricsPort, "Port for the metrics server")
-	startServerCmd.PersistentFlags().String("metricsEndpoint", defaultMetricsEndpoint, "Endpoint for the metrics server")
+	startServerCmd.PersistentFlags().Uint("metricsPort", config.DefaultMetricsPort, "Port for the metrics server")
+	startServerCmd.PersistentFlags().String("metricsEndpoint", config.DefaultMetricsEndpoint, "Endpoint for the metrics server")
 }
