@@ -39,6 +39,8 @@ func ExecuteStatement(userContext *user.Context, stmt sqlparser.Statement) (Stat
 		executor = NewSelectStatement()
 	case *sqlparser.Show:
 		executor = NewShowStatement()
+	case *sqlparser.CreateTable:
+		executor = NewCreateTableStatement()
 	default:
 		logrus.Debugf("Unknown statement %+#v", v)
 		return Result{}, errUnknownStatement
