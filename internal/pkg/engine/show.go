@@ -7,13 +7,16 @@ import (
 	"vitess.io/vitess/go/vt/sqlparser"
 )
 
+// ShowStatement represents a show statement
 type ShowStatement struct {
 }
 
+// NewShowStatement creates a new show statement
 func NewShowStatement() *ShowStatement {
 	return &ShowStatement{}
 }
 
+// Execute executes a show statement
 func (ShowStatement) Execute(userContext *user.Context, s sqlparser.Statement) (StatementResult, error) {
 	var v = s.(*sqlparser.Show)
 

@@ -1,3 +1,4 @@
+// Package engine is where engine sits
 package engine
 
 import (
@@ -8,13 +9,16 @@ import (
 	"vitess.io/vitess/go/vt/sqlparser"
 )
 
+// CreateDatabaseStatement represents a create database statement
 type CreateDatabaseStatement struct {
 }
 
+// NewCreateDatabaseStatement creates a new create database statement
 func NewCreateDatabaseStatement() *CreateDatabaseStatement {
 	return &CreateDatabaseStatement{}
 }
 
+// Execute creates a new database
 func (CreateDatabaseStatement) Execute(userContext *user.Context, s sqlparser.Statement) (StatementResult, error) {
 	var v = s.(*sqlparser.CreateDatabase)
 

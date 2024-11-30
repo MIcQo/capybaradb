@@ -8,13 +8,16 @@ import (
 	"vitess.io/vitess/go/vt/sqlparser"
 )
 
+// UseDatabaseStatement represents a use database statement
 type UseDatabaseStatement struct {
 }
 
+// NewUseDatabaseStatement creates a new use database statement
 func NewUseDatabaseStatement() *UseDatabaseStatement {
 	return &UseDatabaseStatement{}
 }
 
+// Execute executes a use database statement
 func (UseDatabaseStatement) Execute(userContext *user.Context, s sqlparser.Statement) (StatementResult, error) {
 	var v = s.(*sqlparser.Use)
 

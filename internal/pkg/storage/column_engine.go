@@ -1,13 +1,17 @@
+// Package storage is used to manage the storage
 package storage
 
-type RowEngine struct {
-	// TODO: implement row engine
+// ColumnEngine is the column engine
+type ColumnEngine struct {
+	// TODO: implement column engine
 }
 
-func NewRowEngine() *RowEngine {
-	return &RowEngine{}
+// NewColumnEngine returns a new column engine
+func NewColumnEngine() *ColumnEngine {
+	return &ColumnEngine{}
 }
 
-func (row *RowEngine) EngineName() string {
+// EngineName returns the engine name
+func (column *ColumnEngine) EngineName() string {
 	return "row"
 }

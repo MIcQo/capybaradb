@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	errEngineNotFound   = errors.New("engine not found")
+	errEngineNotFound   = errors.New("engine not found") // nolint
 	errUnknownStatement = errors.New("unknown statement")
 	errUnknownSchema    = errors.New("unknown schema")
 )

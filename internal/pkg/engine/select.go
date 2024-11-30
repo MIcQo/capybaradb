@@ -7,14 +7,17 @@ import (
 	"vitess.io/vitess/go/vt/sqlparser"
 )
 
+// SelectStatement represents a select statement
 type SelectStatement struct {
 }
 
+// NewSelectStatement creates a new select statement
 func NewSelectStatement() *SelectStatement {
 	return &SelectStatement{}
 }
 
-func (SelectStatement) Execute(userContext *user.Context, s sqlparser.Statement) (StatementResult, error) {
+// Execute executes a select statement
+func (SelectStatement) Execute(_ *user.Context, s sqlparser.Statement) (StatementResult, error) {
 	var v = s.(*sqlparser.Select)
 	var table = v.GetFrom()[0].(*sqlparser.AliasedTableExpr)
 
@@ -35,6 +38,8 @@ func (SelectStatement) Execute(userContext *user.Context, s sqlparser.Statement)
 	//fmt.Printf("From: %+#v -> %d\n", from, len(from))
 
 	fmt.Printf("Select statement: %+#v\n", s)
+
+	selectCounter.WithLabelValues().Inc()
 
 	return NewSelectResult(0, nil, nil), nil
 }

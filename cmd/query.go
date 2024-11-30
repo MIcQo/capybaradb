@@ -5,10 +5,11 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/chzyer/readline"
 	"net"
 	"strings"
 	"time"
+
+	"github.com/chzyer/readline"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
