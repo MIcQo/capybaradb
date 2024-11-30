@@ -23,18 +23,18 @@ It supports clustering and hybrid storage models (row and column-oriented).`,
 	},
 
 	PersistentPreRun: func(cmd *cobra.Command, _ []string) {
-		debug, _ := cmd.Flags().GetBool("debug")
-		if debug {
-			logrus.Info("Debug mode enabled")
-			logrus.SetLevel(logrus.DebugLevel)
-		}
-
 		logrus.SetFormatter(&logrus.TextFormatter{
 			FullTimestamp:   true,
 			DisableColors:   true,
 			TimestampFormat: "2006-01-02 15:04:05",
 			FieldMap:        logrus.FieldMap{"version": version.Version},
 		})
+
+		debug, _ := cmd.Flags().GetBool("debug")
+		if debug {
+			logrus.Info("Debug mode enabled")
+			logrus.SetLevel(logrus.DebugLevel)
+		}
 	},
 }
 
