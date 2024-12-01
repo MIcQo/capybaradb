@@ -9,15 +9,18 @@ import (
 
 // ShowStatement represents a show statement
 type ShowStatement struct {
+	storage storage.Storage
 }
 
 // NewShowStatement creates a new show statement
-func NewShowStatement() *ShowStatement {
-	return &ShowStatement{}
+func NewShowStatement(storage storage.Storage) *ShowStatement {
+	return &ShowStatement{
+		storage: storage,
+	}
 }
 
 // Execute executes a show statement
-func (ShowStatement) Execute(userContext *user.Context, s sqlparser.Statement) (StatementResult, error) {
+func (a *ShowStatement) Execute(userContext *user.Context, s sqlparser.Statement) (StatementResult, error) {
 	var v = s.(*sqlparser.Show)
 
 	showCounter.WithLabelValues().Inc()
@@ -26,12 +29,12 @@ func (ShowStatement) Execute(userContext *user.Context, s sqlparser.Statement) (
 	case *sqlparser.ShowBasic:
 		switch t.Command {
 		case sqlparser.Database:
-			var databases = make([][]string, 0)
-			for name := range storage.SchemaStorage {
-				databases = append(databases, []string{name})
+			var databases, err = a.storage.ListSchemas()
+			if err != nil {
+				return NewEmptyResult(), err
 			}
 
-			return NewSelectResult(len(databases), []string{"Database"}, databases), nil
+			return NewSelectResult(len(databases), []string{"Database", "Description"}, databases), nil
 		case sqlparser.Table:
 			var tables = make([][]string, 0)
 			for _, table := range storage.SchemaStorage[userContext.Schema].Tables {

@@ -11,11 +11,15 @@ import (
 var defaultEngine = storage.NewRowEngine()
 
 // CreateTableStatement creates a new create table statement
-type CreateTableStatement struct{}
+type CreateTableStatement struct {
+	storage storage.Storage
+}
 
-// NewCreateTableStatement creates a new create table statement
-func NewCreateTableStatement() *CreateTableStatement {
-	return &CreateTableStatement{}
+// NewCreateTableStatement creates a new table executor
+func NewCreateTableStatement(storage storage.Storage) *CreateTableStatement {
+	return &CreateTableStatement{
+		storage: storage,
+	}
 }
 
 // Execute creates a new table
@@ -26,15 +30,15 @@ func (c *CreateTableStatement) Execute(userContext *user.Context, s sqlparser.St
 		return NewEmptyResult(), errors.New("table name is empty")
 	}
 
-	if _, ok := storage.SchemaStorage[userContext.Schema].Tables[v.Table.Name.String()]; ok {
+	if c.storage.HasTable(userContext.Schema, v.Table.Name.String()) {
 		return NewEmptyResult(), errors.New("table already exists")
+
 	}
 
 	var engine = defaultEngine
+	var columns = make([]storage.Column, 0)
 
-	storage.SchemaStorage[userContext.Schema].Tables[v.Table.Name.String()] = storage.Table{
-		Name: v.Table.Name.String(), Engine: engine, Columns: make([]storage.Column, 0),
-	}
+	c.storage.CreateTable(userContext.Schema, engine, v.Table.Name.String(), columns)
 
 	return NewUpdateResult(1), nil
 }

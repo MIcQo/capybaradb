@@ -10,15 +10,18 @@ import (
 
 // UseDatabaseStatement represents a use database statement
 type UseDatabaseStatement struct {
+	storage storage.Storage
 }
 
 // NewUseDatabaseStatement creates a new use database statement
-func NewUseDatabaseStatement() *UseDatabaseStatement {
-	return &UseDatabaseStatement{}
+func NewUseDatabaseStatement(storage storage.Storage) *UseDatabaseStatement {
+	return &UseDatabaseStatement{
+		storage: storage,
+	}
 }
 
 // Execute executes a use database statement
-func (UseDatabaseStatement) Execute(userContext *user.Context, s sqlparser.Statement) (StatementResult, error) {
+func (a *UseDatabaseStatement) Execute(userContext *user.Context, s sqlparser.Statement) (StatementResult, error) {
 	var v = s.(*sqlparser.Use)
 
 	var dbName = v.DBName
@@ -30,7 +33,7 @@ func (UseDatabaseStatement) Execute(userContext *user.Context, s sqlparser.State
 		return NewEmptyResult(), nil
 	}
 
-	if _, ok := storage.SchemaStorage[dbName.String()]; !ok {
+	if !a.storage.HasSchema(dbName.String()) {
 		return NewEmptyResult(), errUnknownSchema
 	}
 

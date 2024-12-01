@@ -1,12 +1,16 @@
 package engine
 
 import (
+	"capybaradb/internal/pkg/storage"
 	"capybaradb/internal/pkg/user"
 	"errors"
 
 	"github.com/sirupsen/logrus"
 	"vitess.io/vitess/go/vt/sqlparser"
 )
+
+// DefaultStorageEngine is the default storage engine
+var DefaultStorageEngine = storage.NewInMemoryStorage()
 
 var (
 	errEngineNotFound   = errors.New("engine not found") // nolint
@@ -29,18 +33,20 @@ type StatementResult interface {
 
 // ExecuteStatement executes a SQL statement through tables and engines
 func ExecuteStatement(userContext *user.Context, stmt sqlparser.Statement) (StatementResult, error) {
+	var dbStorage = DefaultStorageEngine
+
 	var executor Statement
 	switch v := stmt.(type) {
 	case *sqlparser.CreateDatabase:
-		executor = NewCreateDatabaseStatement()
+		executor = NewCreateDatabaseStatement(dbStorage)
 	case *sqlparser.Use:
-		executor = NewUseDatabaseStatement()
+		executor = NewUseDatabaseStatement(dbStorage)
 	case *sqlparser.Select:
 		executor = NewSelectStatement()
 	case *sqlparser.Show:
-		executor = NewShowStatement()
+		executor = NewShowStatement(dbStorage)
 	case *sqlparser.CreateTable:
-		executor = NewCreateTableStatement()
+		executor = NewCreateTableStatement(dbStorage)
 	default:
 		logrus.Debugf("Unknown statement %+#v", v)
 		return Result{}, errUnknownStatement

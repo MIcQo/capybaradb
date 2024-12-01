@@ -6,3 +6,7 @@ type Schema struct {
 	Name        string
 	Description string
 }
+
+func (s *Schema) String() string {
+	return s.Name
+}
