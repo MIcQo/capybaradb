@@ -32,8 +32,18 @@ type StatementResult interface {
 }
 
 // ExecuteStatement executes a SQL statement through tables and engines
-func ExecuteStatement(userContext *user.Context, stmt sqlparser.Statement) (StatementResult, error) {
+func ExecuteStatement(
+	config *Config,
+	userContext *user.Context,
+	stmt sqlparser.Statement,
+) (StatementResult, error) {
 	var dbStorage = DefaultStorageEngine
+
+	if config.defaultSchemaName != "" {
+		if err := dbStorage.CreateSchema(config.defaultSchemaName, "default schema"); err != nil {
+			panic(err)
+		}
+	}
 
 	var executor Statement
 	switch v := stmt.(type) {

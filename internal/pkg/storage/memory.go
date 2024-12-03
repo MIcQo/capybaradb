@@ -1,18 +1,8 @@
 package storage
 
 import (
-	"capybaradb/internal/pkg/config"
 	"math"
 )
-
-// SchemaStorage is the temporary storage
-var SchemaStorage = map[string]*Schema{
-	config.DefaultSchema: {
-		Name:        config.DefaultSchema,
-		Tables:      map[string]Table{},
-		Description: "default schema",
-	},
-}
 
 // InMemoryStorage is the in memory storage for testing purpose
 type InMemoryStorage struct {
@@ -54,13 +44,7 @@ func (m *InMemoryStorage) ListSchemas() ([][]string, error) {
 
 func NewInMemoryStorage() *InMemoryStorage {
 	return &InMemoryStorage{
-		inMemory: map[string]*Schema{
-			config.DefaultSchema: {
-				Name:        config.DefaultSchema,
-				Tables:      map[string]Table{},
-				Description: "default schema",
-			},
-		},
+		inMemory: map[string]*Schema{},
 	}
 }
 

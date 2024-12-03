@@ -100,9 +100,12 @@ var queryCmd = &cobra.Command{
 }
 
 func init() {
-	queryCmd.PersistentFlags().String("host", config.DefaultHost, "Host to connect to")
-	queryCmd.PersistentFlags().Uint("port", config.DefaultDatabasePort, "Port to connect to")
-	queryCmd.PersistentFlags().BoolP("interactive", "i", false, "Enable interactive mode")
+	queryCmd.PersistentFlags().StringP("host", "H", config.DefaultHost, "Host to connect to")
+	queryCmd.PersistentFlags().StringP("user", "u", "root", "Username to connect with")
+	queryCmd.PersistentFlags().StringP("password", "P", "", "Password to connect with")
+	queryCmd.PersistentFlags().UintP("port", "p", config.DefaultDatabasePort, "Port to connect to")
+
+	queryCmd.PersistentFlags().BoolP("interactive", "i", false, "Enable interactive mode toggle")
 
 	rootCmd.AddCommand(queryCmd)
 }

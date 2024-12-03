@@ -36,9 +36,9 @@ func (a *ShowStatement) Execute(userContext *user.Context, s sqlparser.Statement
 
 			return NewSelectResult(len(databases), []string{"Database", "Description"}, databases), nil
 		case sqlparser.Table:
-			var tables = make([][]string, 0)
-			for _, table := range storage.SchemaStorage[userContext.Schema].Tables {
-				tables = append(tables, []string{table.Name})
+			var tables, err = a.storage.ListTables(userContext.Schema)
+			if err != nil {
+				return NewEmptyResult(), err
 			}
 
 			return NewSelectResult(len(tables), []string{"Table"}, tables), nil

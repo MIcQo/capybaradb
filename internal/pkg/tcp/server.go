@@ -30,15 +30,40 @@ var openConnectionsGauge = promauto.NewGaugeVec(
 	[]string{},
 )
 
+// Config is the configuration for the TCP Server
+type Config func(*Server)
+
+// WithPort sets the port for the TCP Server
+func WithPort(port uint) func(*Server) {
+	return func(s *Server) {
+		s.port = port
+	}
+}
+
+// WithEngineConfig sets the engine configuration
+func WithEngineConfig(engineConfig *engine.Config) func(*Server) {
+	return func(s *Server) {
+		s.engineConfig = engineConfig
+	}
+}
+
 // NewServer creates a new TCP Server
-func NewServer(port uint) *Server {
-	return &Server{port: port}
+func NewServer(cfg ...Config) *Server {
+	var s = &Server{}
+
+	for _, c := range cfg {
+		c(s)
+	}
+
+	return s
 }
 
 // Server represents the TCP Server
 type Server struct {
 	port   uint
 	server net.Listener
+
+	engineConfig *engine.Config
 }
 
 // Start starts the TCP Server
@@ -104,11 +129,11 @@ func (s *Server) handleConnection(conn net.Conn) {
 		var query = strings.TrimSuffix(strings.TrimSuffix(string(queryBytes), "\n"), "\n")
 
 		var logger = logrus.WithField("query", query)
-		logger.Debug("Received query")
+		logger.Debug("received query")
 
 		parser, err := sqlparser.New(sqlparser.Options{})
 		if err != nil {
-			logger.WithError(err).Debug("Failed to create parser")
+			logger.WithError(err).Debug("failed to create parser")
 			_, _ = rw.WriteString("failed to parse input")
 			_ = rw.Flush()
 			continue
@@ -116,16 +141,16 @@ func (s *Server) handleConnection(conn net.Conn) {
 
 		stmt, err := parser.Parse(query)
 		if err != nil {
-			logger.WithError(err).Debug("Failed to parse input")
+			logger.WithError(err).Debug("failed to parse input")
 			_, _ = rw.WriteString("failed to parse input")
 			_ = rw.Flush()
 			continue
 		}
 
 		uctx.Query = query
-		result, err := engine.ExecuteStatement(uctx, stmt)
+		result, err := engine.ExecuteStatement(s.engineConfig, uctx, stmt)
 		if err != nil {
-			logger.WithError(err).Debug("Failed to execute statement")
+			logger.WithError(err).Debug("failed to execute statement")
 			_, _ = rw.WriteString("failed to execute statement: " + err.Error())
 			_ = rw.Flush()
 			continue

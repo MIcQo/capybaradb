@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"capybaradb/internal/pkg/config"
+	"capybaradb/internal/pkg/engine"
 	"capybaradb/internal/pkg/metrics"
 	"capybaradb/internal/pkg/tcp"
 	"capybaradb/internal/pkg/version"
@@ -45,7 +46,9 @@ var startServerCmd = &cobra.Command{
 
 		var metricsPort, _ = cmd.Flags().GetUint("metricsPort")
 		var metricsEndpoint, _ = cmd.Flags().GetString("metricsEndpoint")
+
 		var databasePort, _ = cmd.Flags().GetUint("port")
+		var defaultSchema, _ = cmd.Flags().GetString("defaultSchema")
 
 		go func() {
 			if err := metrics.NewServer(metricsPort, metricsEndpoint).Start(); err != nil {
@@ -54,7 +57,21 @@ var startServerCmd = &cobra.Command{
 		}()
 
 		go func() {
-			if err := tcp.NewServer(databasePort).Start(); err != nil {
+			var cfg = []tcp.Config{
+				tcp.WithEngineConfig(
+					engine.NewConfig(
+						engine.WithDefaultSchema(defaultSchema),
+					),
+				),
+			}
+
+			if databasePort != 0 {
+				cfg = append(cfg, tcp.WithPort(databasePort))
+			}
+
+			var tcpServer = tcp.NewServer(cfg...)
+
+			if err := tcpServer.Start(); err != nil {
 				logrus.Fatal(err)
 			}
 		}()
@@ -72,4 +89,6 @@ func init() {
 
 	startServerCmd.PersistentFlags().Uint("metricsPort", config.DefaultMetricsPort, "Port for the metrics server")
 	startServerCmd.PersistentFlags().String("metricsEndpoint", config.DefaultMetricsEndpoint, "Endpoint for the metrics server")
+
+	startServerCmd.PersistentFlags().String("defaultSchema", config.DefaultSchema, "Default database schema")
 }
