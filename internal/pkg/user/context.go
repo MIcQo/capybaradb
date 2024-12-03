@@ -6,3 +6,7 @@ type Context struct {
 	Query  string
 	Schema string
 }
+
+func NewContext(query string, schema string) *Context {
+	return &Context{Query: query, Schema: schema}
+}

@@ -13,7 +13,7 @@ const port = 2121
 
 func init() {
 	// Start the new server.
-	srv = NewServer(port)
+	srv = NewServer(WithPort(port))
 
 	// Run the server in Goroutine to stop tests from blocking
 	// test execution.

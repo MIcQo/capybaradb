@@ -11,7 +11,7 @@ type Storage interface {
 	ListSchemas() ([][]string, error)
 
 	HasTable(schema, table string) bool
-	CreateTable(schema string, engine TableStorageEngine, name string, columns []Column) error
+	CreateTable(schema string, engine TableStorageEngine, name string, columns []Column, primaryKey string) error
 	ListTables(schema string) ([][]string, error)
 
 	// Free returns the free space

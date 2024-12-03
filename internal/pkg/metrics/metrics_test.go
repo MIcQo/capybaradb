@@ -39,7 +39,7 @@ func TestMetricsEndpoint(t *testing.T) {
 	}
 
 	// Check body and content-type
-	expectedContentType := "text/plain; version=0.0.4; charset=utf-8; escaping=values"
+	expectedContentType := "text/plain; version=0.0.4; charset=utf-8; escaping=underscores"
 	if resp.Header.Get("Content-Type") != expectedContentType {
 		t.Errorf("Expected Content-Type %q, got %q", expectedContentType, resp.Header.Get("Content-Type"))
 	}

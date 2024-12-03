@@ -38,7 +38,9 @@ func (c *CreateTableStatement) Execute(userContext *user.Context, s sqlparser.St
 	var engine = defaultEngine
 	var columns = make([]storage.Column, 0)
 
-	c.storage.CreateTable(userContext.Schema, engine, v.Table.Name.String(), columns)
+	if err := c.storage.CreateTable(userContext.Schema, engine, v.Table.Name.String(), columns, ""); err != nil {
+		return NewEmptyResult(), err
+	}
 
 	return NewUpdateResult(1), nil
 }

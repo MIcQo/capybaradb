@@ -9,12 +9,8 @@ type InMemoryStorage struct {
 	inMemory map[string]*Schema
 }
 
-func (m *InMemoryStorage) CreateTable(schema string, engine TableStorageEngine, name string, columns []Column) error {
-	m.inMemory[schema].Tables[name] = Table{
-		Name:    name,
-		Engine:  engine,
-		Columns: columns,
-	}
+func (m *InMemoryStorage) CreateTable(schema string, engine TableStorageEngine, name string, columns []Column, primaryKey string) error {
+	m.inMemory[schema].Tables[name] = NewTable(engine, name, columns, primaryKey)
 	return nil
 }
 
