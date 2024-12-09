@@ -3,18 +3,18 @@ package tcp
 
 import (
 	"bufio"
+	"bytes"
 	"capybaradb/internal/pkg/engine"
 	"capybaradb/internal/pkg/user"
+	"encoding/gob"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"net"
 	"strings"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-
-	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/sirupsen/logrus"
 	"vitess.io/vitess/go/vt/sqlparser"
 )
@@ -149,43 +149,85 @@ func (s *Server) handleConnection(conn net.Conn) {
 
 		uctx.Query = query
 		result, err := engine.ExecuteStatement(s.engineConfig, uctx, stmt)
-		if err != nil {
-			logger.WithError(err).Debug("failed to execute statement")
-			_, _ = rw.WriteString("failed to execute statement: " + err.Error())
+		//if err != nil {
+		//	logger.WithError(err).Debug("failed to execute statement")
+		//	_, _ = rw.WriteString("failed to execute statement: " + err.Error())
+		//	_ = rw.Flush()
+		//	continue
+		//}
+
+		var response = new(bytes.Buffer)
+		var encoder = gob.NewEncoder(response)
+		var data = Packet{
+			Error: err != nil,
+		}
+
+		if err == nil {
+			data.AffectedRows = int64(result.AffectedRows())
+			data.LastInsertID = int32(result.LastInsertId())
+			data.Rows = result.Rows()
+			data.Columns = result.Columns()
+		}
+
+		if encodeErr := encoder.Encode(data); encodeErr != nil {
+			logger.WithError(encodeErr).Debug("failed to encode response")
+			_, _ = rw.WriteString("failed to encode response")
 			_ = rw.Flush()
 			continue
 		}
 
-		if len(result.Rows()) > 0 {
-			var t = table.NewWriter()
-			t.SetOutputMirror(rw)
-			var headers = table.Row{}
-			for _, header := range result.Columns() {
-				headers = append(headers, header)
-			}
+		_, _ = rw.Write(response.Bytes())
 
-			t.AppendHeader(headers)
+		//logrus.Debugf("response: %+#v", data)
+		//
+		//binaryWriteErr := binary.Write(response, binary.BigEndian, data)
+		//if binaryWriteErr != nil {
+		//	logger.WithError(binaryWriteErr).Debug("failed to write response")
+		//	_, _ = rw.WriteString("failed to write response")
+		//	_ = rw.Flush()
+		//	continue
+		//}
+		//
+		//_, _ = rw.Write(response.Bytes())
 
-			for _, row := range result.Rows() {
-				var r = table.Row{}
-				for _, cell := range row {
-					r = append(r, cell)
-				}
-
-				t.AppendRow(r)
-			}
-
-			t.Render()
-		} else {
-			_, _ = rw.WriteString(fmt.Sprintf(
-				"Affected rows: %d",
-				result.AffectedRows(),
-			))
-		}
+		//if len(result.Rows()) > 0 {
+		//	var t = table.NewWriter()
+		//	t.SetOutputMirror(rw)
+		//	var headers = table.Row{}
+		//	for _, header := range result.Columns() {
+		//		headers = append(headers, header)
+		//	}
+		//
+		//	t.AppendHeader(headers)
+		//
+		//	for _, row := range result.Rows() {
+		//		var r = table.Row{}
+		//		for _, cell := range row {
+		//			r = append(r, cell)
+		//		}
+		//
+		//		t.AppendRow(r)
+		//	}
+		//
+		//	t.Render()
+		//} else {
+		//	_, _ = rw.WriteString(fmt.Sprintf(
+		//		"Affected rows: %d",
+		//		result.AffectedRows(),
+		//	))
+		//}
 
 		_ = rw.Flush()
 	}
 
 	logrus.WithField("addr", conn.RemoteAddr().String()).Debug("connection closed")
 	openConnectionsGauge.WithLabelValues().Dec()
+}
+
+type Packet struct {
+	Error        bool
+	AffectedRows int64
+	LastInsertID int32
+	Columns      []string
+	Rows         [][]string
 }

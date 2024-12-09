@@ -3,10 +3,14 @@ package cmd
 
 import (
 	"capybaradb/internal/pkg/config"
+	"capybaradb/internal/pkg/tcp"
+	"encoding/gob"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/jedib0t/go-pretty/v6/table"
 	"net"
+	"os"
 	"strings"
 	"time"
 
@@ -126,10 +130,40 @@ func sendAndReadResponse(srv net.Conn, query string) {
 		return
 	}
 
-	if !strings.HasSuffix(string(out), "\n") {
-		out = []byte(string(out) + "\n")
+	var result tcp.Packet
+	var decoder = gob.NewDecoder(strings.NewReader(string(out)))
+
+	if err := decoder.Decode(&result); err != nil {
+		logrus.WithError(err).Debug("Failed to decode response from database")
+		return
 	}
 
-	fmt.Printf("%s", out)
+	if len(result.Rows) > 0 {
+		var t = table.NewWriter()
+		t.SetOutputMirror(os.Stdout)
+		var headers = table.Row{}
+		for _, header := range result.Columns {
+			headers = append(headers, header)
+		}
+
+		t.AppendHeader(headers)
+
+		for _, row := range result.Rows {
+			var r = table.Row{}
+			for _, cell := range row {
+				r = append(r, cell)
+			}
+
+			t.AppendRow(r)
+		}
+
+		t.Render()
+	} else {
+		fmt.Printf(
+			"Affected rows: %d\n",
+			result.AffectedRows,
+		)
+	}
+
 	fmt.Printf("Query took: %s\n", time.Since(n))
 }

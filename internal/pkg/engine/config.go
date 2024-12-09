@@ -1,11 +1,15 @@
 package engine
 
+import "capybaradb/internal/pkg/storage"
+
 // Option is a function that can be passed to NewConfig
 type Option func(*Config)
 
 // Config is the configuration for the engine
 type Config struct {
 	defaultSchemaName string
+
+	storage storage.Storage
 }
 
 // WithDefaultSchema sets the default schema
@@ -16,6 +20,13 @@ func WithDefaultSchema(name string) Option {
 		}
 
 		c.defaultSchemaName = name
+	}
+}
+
+// WithStorage sets the storage
+func WithStorage(storage storage.Storage) Option {
+	return func(c *Config) {
+		c.storage = storage
 	}
 }
 

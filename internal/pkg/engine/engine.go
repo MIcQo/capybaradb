@@ -1,16 +1,12 @@
 package engine
 
 import (
-	"capybaradb/internal/pkg/storage"
 	"capybaradb/internal/pkg/user"
 	"errors"
 
 	"github.com/sirupsen/logrus"
 	"vitess.io/vitess/go/vt/sqlparser"
 )
-
-// DefaultStorageEngine is the default storage engine
-var DefaultStorageEngine = storage.NewInMemoryStorage()
 
 var (
 	errEngineNotFound   = errors.New("engine not found") // nolint
@@ -37,13 +33,7 @@ func ExecuteStatement(
 	userContext *user.Context,
 	stmt sqlparser.Statement,
 ) (StatementResult, error) {
-	var dbStorage = DefaultStorageEngine
-
-	if config.defaultSchemaName != "" {
-		if err := dbStorage.CreateSchema(config.defaultSchemaName, "default schema"); err != nil {
-			panic(err)
-		}
-	}
+	var dbStorage = config.storage
 
 	var executor Statement
 	switch v := stmt.(type) {

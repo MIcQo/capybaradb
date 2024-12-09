@@ -4,6 +4,7 @@ import (
 	"capybaradb/internal/pkg/config"
 	"capybaradb/internal/pkg/engine"
 	"capybaradb/internal/pkg/metrics"
+	"capybaradb/internal/pkg/storage"
 	"capybaradb/internal/pkg/tcp"
 	"capybaradb/internal/pkg/version"
 	"os/signal"
@@ -50,6 +51,8 @@ var startServerCmd = &cobra.Command{
 		var databasePort, _ = cmd.Flags().GetUint("port")
 		var defaultSchema, _ = cmd.Flags().GetString("defaultSchema")
 
+		var dbStorage = storage.NewDiskStorage()
+
 		go func() {
 			if err := metrics.NewServer(metricsPort, metricsEndpoint).Start(); err != nil {
 				logrus.Fatal(err)
@@ -61,6 +64,7 @@ var startServerCmd = &cobra.Command{
 				tcp.WithEngineConfig(
 					engine.NewConfig(
 						engine.WithDefaultSchema(defaultSchema),
+						engine.WithStorage(dbStorage),
 					),
 				),
 			}
