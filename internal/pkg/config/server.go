@@ -10,6 +10,9 @@ const (
 
 	// DefaultSchema is the default schema
 	DefaultSchema = "public"
+
+	// DefaultInputBufferSize defines size of input buffer for TCP packets
+	DefaultInputBufferSize = 2048
 )
 
 const (

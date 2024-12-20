@@ -2,8 +2,8 @@
 package engine
 
 import (
+	"capybaradb/internal/pkg/session"
 	"capybaradb/internal/pkg/storage"
-	"capybaradb/internal/pkg/user"
 	"github.com/sirupsen/logrus"
 	"vitess.io/vitess/go/vt/sqlparser"
 )
@@ -21,7 +21,7 @@ func NewCreateDatabaseStatement(storage storage.Storage) *CreateDatabaseStatemen
 }
 
 // Execute creates a new database
-func (a *CreateDatabaseStatement) Execute(userContext *user.Context, s sqlparser.Statement) (StatementResult, error) {
+func (a *CreateDatabaseStatement) Execute(userContext *session.Context, s sqlparser.Statement) (StatementResult, error) {
 	var v = s.(*sqlparser.CreateDatabase)
 
 	var dbName = v.DBName

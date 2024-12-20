@@ -1,8 +1,8 @@
 package engine
 
 import (
+	"capybaradb/internal/pkg/session"
 	"capybaradb/internal/pkg/storage"
-	"capybaradb/internal/pkg/user"
 
 	"vitess.io/vitess/go/vt/sqlparser"
 )
@@ -20,7 +20,7 @@ func NewShowStatement(storage storage.Storage) *ShowStatement {
 }
 
 // Execute executes a show statement
-func (a *ShowStatement) Execute(userContext *user.Context, s sqlparser.Statement) (StatementResult, error) {
+func (a *ShowStatement) Execute(userContext *session.Context, s sqlparser.Statement) (StatementResult, error) {
 	var v = s.(*sqlparser.Show)
 
 	showCounter.WithLabelValues().Inc()

@@ -1,8 +1,8 @@
 package engine
 
 import (
+	"capybaradb/internal/pkg/session"
 	"capybaradb/internal/pkg/storage"
-	"capybaradb/internal/pkg/user"
 	"errors"
 
 	"vitess.io/vitess/go/vt/sqlparser"
@@ -23,7 +23,7 @@ func NewCreateTableStatement(storage storage.Storage) *CreateTableStatement {
 }
 
 // Execute creates a new table
-func (c *CreateTableStatement) Execute(userContext *user.Context, s sqlparser.Statement) (StatementResult, error) {
+func (c *CreateTableStatement) Execute(userContext *session.Context, s sqlparser.Statement) (StatementResult, error) {
 	var v = s.(*sqlparser.CreateTable)
 
 	if v.Table.IsEmpty() {

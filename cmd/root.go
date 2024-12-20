@@ -24,8 +24,8 @@ It supports clustering and hybrid storage models (row and column-oriented).`,
 
 	PersistentPreRun: func(cmd *cobra.Command, _ []string) {
 		logrus.SetFormatter(&logrus.TextFormatter{
-			FullTimestamp:   true,
-			DisableColors:   true,
+			FullTimestamp: true,
+			//DisableColors:   true,
 			TimestampFormat: "2006-01-02 15:04:05",
 			FieldMap:        logrus.FieldMap{"version": version.Version},
 		})

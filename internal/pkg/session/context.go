@@ -1,5 +1,5 @@
 // Package user contains the user context
-package user
+package session
 
 // Context represents the user context
 type Context struct {
@@ -7,6 +7,6 @@ type Context struct {
 	Schema string
 }
 
-func NewContext(query string, schema string) *Context {
-	return &Context{Query: query, Schema: schema}
+func NewContext(schema string) *Context {
+	return &Context{Schema: schema}
 }

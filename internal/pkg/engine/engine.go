@@ -1,7 +1,7 @@
 package engine
 
 import (
-	"capybaradb/internal/pkg/user"
+	"capybaradb/internal/pkg/session"
 	"errors"
 
 	"github.com/sirupsen/logrus"
@@ -16,7 +16,7 @@ var (
 
 // Statement - SQL statement executor
 type Statement interface {
-	Execute(userContext *user.Context, s sqlparser.Statement) (StatementResult, error)
+	Execute(userContext *session.Context, s sqlparser.Statement) (StatementResult, error)
 }
 
 // StatementResult - SQL statement result
@@ -30,7 +30,7 @@ type StatementResult interface {
 // ExecuteStatement executes a SQL statement through tables and engines
 func ExecuteStatement(
 	config *Config,
-	userContext *user.Context,
+	userContext *session.Context,
 	stmt sqlparser.Statement,
 ) (StatementResult, error) {
 	var dbStorage = config.storage

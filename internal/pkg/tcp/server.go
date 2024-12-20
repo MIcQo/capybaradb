@@ -3,19 +3,16 @@ package tcp
 
 import (
 	"bufio"
-	"bytes"
+	"capybaradb/internal/pkg/config"
 	"capybaradb/internal/pkg/engine"
-	"capybaradb/internal/pkg/user"
-	"encoding/gob"
-	"encoding/hex"
+	"capybaradb/internal/pkg/mysql-protocol"
+	"capybaradb/internal/pkg/session"
 	"errors"
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"net"
-	"strings"
-
 	"github.com/sirupsen/logrus"
+	"net"
 	"vitess.io/vitess/go/vt/sqlparser"
 )
 
@@ -47,6 +44,13 @@ func WithEngineConfig(engineConfig *engine.Config) func(*Server) {
 	}
 }
 
+// WithReadBufferSize sets read buffer size for TCP packets
+func WithReadBufferSize(bufferSize uint) func(*Server) {
+	return func(c *Server) {
+		c.readBufferSize = bufferSize
+	}
+}
+
 // NewServer creates a new TCP Server
 func NewServer(cfg ...Config) *Server {
 	var s = &Server{}
@@ -55,13 +59,18 @@ func NewServer(cfg ...Config) *Server {
 		c(s)
 	}
 
+	if s.readBufferSize == 0 {
+		s.readBufferSize = config.DefaultInputBufferSize
+	}
+
 	return s
 }
 
 // Server represents the TCP Server
 type Server struct {
-	port   uint
-	server net.Listener
+	port           uint
+	server         net.Listener
+	readBufferSize uint
 
 	engineConfig *engine.Config
 }
@@ -105,129 +114,99 @@ func (s *Server) handleConnections() (err error) {
 
 func (s *Server) handleConnection(conn net.Conn) {
 	defer func(conn net.Conn) {
+		logrus.WithField("remote", conn.RemoteAddr()).Debug("closing connection")
+		openConnectionsGauge.WithLabelValues().Dec()
 		_ = conn.Close()
 	}(conn)
 
-	var uctx = &user.Context{Schema: "public"}
+	var connSession = session.NewContext("")
+
+	logrus.WithField("remote", conn.RemoteAddr()).Debug("new client connected")
+
+	var handshake = mysql_protocol.NewDefaultHandshakePacket()
+	var packet = handshake.Encode()
+	_, _ = conn.Write(packet)
+
+	// read login packet
+	buffer := make([]byte, 4096)
+	_, err := conn.Read(buffer)
+	if err != nil {
+		logrus.Fatal(err)
+		return
+	}
+
+	var lp, _ = mysql_protocol.NewLoginPacket().Decode(buffer)
+	var loginPacket = lp.(*mysql_protocol.LoginPacket)
+
+	var isPasswordValid = mysql_protocol.ValidatePassword("aa", handshake, loginPacket)
+
+	// validate
+	if loginPacket.Username == "root" && isPasswordValid {
+		// create ok packet
+		//fmt.Println("ok packet")
+		_, _ = conn.Write(mysql_protocol.NewOKPacket())
+	} else {
+		// create err packet
+		//fmt.Println("err packet")
+
+		var usingPassword = "NO"
+		if len(loginPacket.Password) != 0 {
+			usingPassword = "YES"
+		}
+
+		_, _ = conn.Write(mysql_protocol.NewErrorPacket(fmt.Sprintf("Access denied for user '%s'@'%s' (using password: %s)", loginPacket.Username, conn.RemoteAddr(), usingPassword)))
+	}
+
 	rw := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
+
+	parser, err := sqlparser.New(sqlparser.Options{})
+	if err != nil {
+		conn.Write(mysql_protocol.NewErrorPacket(err.Error()))
+		return
+	}
+
+commandLoop:
 	for {
-		req, err := rw.ReadString('\n')
+		var packetBuffer = make([]byte, s.readBufferSize)
+		var _, err = rw.Read(packetBuffer)
 		if err != nil {
-			_, _ = rw.WriteString("failed to read input")
-			_ = rw.Flush()
+			// eof
 			break
 		}
 
-		queryBytes, err := hex.DecodeString(req[0 : len(req)-1])
-		if err != nil {
-			logrus.WithError(err).WithField("input", req).Debug("Failed to decode input")
-			_, _ = rw.WriteString("failed to decode input")
-			_ = rw.Flush()
-			continue
+		var pp, parseErr = mysql_protocol.ParseCommandPacket(packetBuffer)
+		if parseErr != nil {
+			logrus.Fatal(parseErr)
+		}
+		fmt.Printf("%+#v\n", pp)
+
+		connSession.Query = ""
+
+		switch v := pp.(type) {
+		case mysql_protocol.CommandQuery:
+			fmt.Println(v.Query)
+			var stmt, err = parser.Parse(v.Query)
+			if err != nil {
+				conn.Write(mysql_protocol.NewErrorPacket(err.Error()))
+				continue
+			}
+
+			connSession.Query = v.Query
+
+			var stmtResult, stmtResultErr = engine.ExecuteStatement(s.engineConfig, connSession, stmt)
+			if stmtResultErr != nil {
+				conn.Write(mysql_protocol.NewErrorPacket(err.Error()))
+				continue
+			}
+			fmt.Printf("%+#v\n", stmtResult)
+
+			_, err = conn.Write(mysql_protocol.NewOKPacket())
+			if err != nil {
+				logrus.Fatal(err)
+			}
+		case mysql_protocol.CommandQuit:
+			break commandLoop
 		}
 
-		var query = strings.TrimSuffix(strings.TrimSuffix(string(queryBytes), "\n"), "\n")
-
-		var logger = logrus.WithField("query", query)
-		logger.Debug("received query")
-
-		parser, err := sqlparser.New(sqlparser.Options{})
-		if err != nil {
-			logger.WithError(err).Debug("failed to create parser")
-			_, _ = rw.WriteString("failed to parse input")
-			_ = rw.Flush()
-			continue
-		}
-
-		stmt, err := parser.Parse(query)
-		if err != nil {
-			logger.WithError(err).Debug("failed to parse input")
-			_, _ = rw.WriteString("failed to parse input")
-			_ = rw.Flush()
-			continue
-		}
-
-		uctx.Query = query
-		result, err := engine.ExecuteStatement(s.engineConfig, uctx, stmt)
-		//if err != nil {
-		//	logger.WithError(err).Debug("failed to execute statement")
-		//	_, _ = rw.WriteString("failed to execute statement: " + err.Error())
-		//	_ = rw.Flush()
-		//	continue
-		//}
-
-		var response = new(bytes.Buffer)
-		var encoder = gob.NewEncoder(response)
-		var data = Packet{
-			Error: err != nil,
-		}
-
-		if err == nil {
-			data.AffectedRows = int64(result.AffectedRows())
-			data.LastInsertID = int32(result.LastInsertId())
-			data.Rows = result.Rows()
-			data.Columns = result.Columns()
-		}
-
-		if encodeErr := encoder.Encode(data); encodeErr != nil {
-			logger.WithError(encodeErr).Debug("failed to encode response")
-			_, _ = rw.WriteString("failed to encode response")
-			_ = rw.Flush()
-			continue
-		}
-
-		_, _ = rw.Write(response.Bytes())
-
-		//logrus.Debugf("response: %+#v", data)
-		//
-		//binaryWriteErr := binary.Write(response, binary.BigEndian, data)
-		//if binaryWriteErr != nil {
-		//	logger.WithError(binaryWriteErr).Debug("failed to write response")
-		//	_, _ = rw.WriteString("failed to write response")
-		//	_ = rw.Flush()
-		//	continue
-		//}
-		//
-		//_, _ = rw.Write(response.Bytes())
-
-		//if len(result.Rows()) > 0 {
-		//	var t = table.NewWriter()
-		//	t.SetOutputMirror(rw)
-		//	var headers = table.Row{}
-		//	for _, header := range result.Columns() {
-		//		headers = append(headers, header)
-		//	}
-		//
-		//	t.AppendHeader(headers)
-		//
-		//	for _, row := range result.Rows() {
-		//		var r = table.Row{}
-		//		for _, cell := range row {
-		//			r = append(r, cell)
-		//		}
-		//
-		//		t.AppendRow(r)
-		//	}
-		//
-		//	t.Render()
-		//} else {
-		//	_, _ = rw.WriteString(fmt.Sprintf(
-		//		"Affected rows: %d",
-		//		result.AffectedRows(),
-		//	))
-		//}
-
-		_ = rw.Flush()
 	}
-
-	logrus.WithField("addr", conn.RemoteAddr().String()).Debug("connection closed")
-	openConnectionsGauge.WithLabelValues().Dec()
-}
-
-type Packet struct {
-	Error        bool
-	AffectedRows int64
-	LastInsertID int32
-	Columns      []string
-	Rows         [][]string
 }

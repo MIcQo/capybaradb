@@ -3,18 +3,11 @@ package cmd
 
 import (
 	"capybaradb/internal/pkg/config"
-	"capybaradb/internal/pkg/tcp"
-	"encoding/gob"
-	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/jedib0t/go-pretty/v6/table"
-	"net"
-	"os"
-	"strings"
-	"time"
-
 	"github.com/chzyer/readline"
+	"net"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -114,56 +107,6 @@ func init() {
 	rootCmd.AddCommand(queryCmd)
 }
 
-func sendAndReadResponse(srv net.Conn, query string) {
-	var n = time.Now()
-	var bin = hex.EncodeToString([]byte(query))
-	var _, writeErr = srv.Write([]byte(bin + "\n"))
-	if writeErr != nil {
-		logrus.WithError(writeErr).Debug("Failed to write query to database")
-		return
-	}
-
-	var out = make([]byte, 1024)
-	var _, readErr = srv.Read(out)
-	if readErr != nil {
-		logrus.WithError(readErr).Debug("Failed to read response from database")
-		return
-	}
-
-	var result tcp.Packet
-	var decoder = gob.NewDecoder(strings.NewReader(string(out)))
-
-	if err := decoder.Decode(&result); err != nil {
-		logrus.WithError(err).Debug("Failed to decode response from database")
-		return
-	}
-
-	if len(result.Rows) > 0 {
-		var t = table.NewWriter()
-		t.SetOutputMirror(os.Stdout)
-		var headers = table.Row{}
-		for _, header := range result.Columns {
-			headers = append(headers, header)
-		}
-
-		t.AppendHeader(headers)
-
-		for _, row := range result.Rows {
-			var r = table.Row{}
-			for _, cell := range row {
-				r = append(r, cell)
-			}
-
-			t.AppendRow(r)
-		}
-
-		t.Render()
-	} else {
-		fmt.Printf(
-			"Affected rows: %d\n",
-			result.AffectedRows,
-		)
-	}
-
-	fmt.Printf("Query took: %s\n", time.Since(n))
+func sendAndReadResponse(_ net.Conn, _ string) {
+	return
 }

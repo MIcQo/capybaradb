@@ -50,6 +50,7 @@ var startServerCmd = &cobra.Command{
 
 		var databasePort, _ = cmd.Flags().GetUint("port")
 		var defaultSchema, _ = cmd.Flags().GetString("defaultSchema")
+		var bufferSize, _ = cmd.Flags().GetUint("readBufferSize")
 
 		var dbStorage = storage.NewDiskStorage()
 
@@ -67,6 +68,7 @@ var startServerCmd = &cobra.Command{
 						engine.WithStorage(dbStorage),
 					),
 				),
+				tcp.WithReadBufferSize(bufferSize),
 			}
 
 			if databasePort != 0 {
@@ -90,6 +92,7 @@ func init() {
 
 	// Here you will define your flags and configuration settings.
 	startServerCmd.PersistentFlags().Uint("port", config.DefaultDatabasePort, "Port for the database server")
+	startServerCmd.PersistentFlags().Uint("readBufferSize", config.DefaultInputBufferSize, "defines size of input buffer for TCP packets")
 
 	startServerCmd.PersistentFlags().Uint("metricsPort", config.DefaultMetricsPort, "Port for the metrics server")
 	startServerCmd.PersistentFlags().String("metricsEndpoint", config.DefaultMetricsEndpoint, "Endpoint for the metrics server")

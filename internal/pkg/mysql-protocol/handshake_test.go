@@ -1,0 +1,114 @@
+package mysql_protocol
+
+import (
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
+
+func TestEncodeAndDecodeHandshake(t *testing.T) {
+	var p = newHandshakePacket()
+	p.ProtocolVersion = 10
+	p.ServerVersion = "1.0.0-CapybaraDB"
+	p.ConnectionID = 67786
+	p.Salt1 = []byte("yxl7j3^a")
+	p.ServerCapabilities = uint16(Ssl | Compress | Transactions | ClientProtocol41 | FoundRows | ConnectWithDb | LocalFiles | ClientMysql | ClientInteractive | SecureConnection | IgnoreSpace)
+	p.Charset = Utf8GeneralCI
+	p.Status = ServerStatusAutocommit
+	p.ExtendedServerCapabilities = 0x00
+	p.AuthPluginDataLength = 21
+	p.Salt2 = []byte("J.ETS'dFms|6")
+	p.MariaDBExtendedCapabilities = 0x00
+	p.AuthPluginName = string(MySQLNativePassword)
+
+	var encodedPacket = p.Encode()
+	var dp, err = newHandshakePacket().Decode(encodedPacket)
+	var decodedPacket = dp.(*HandshakePacket)
+
+	assert.Nil(t, err)
+
+	assert.Equal(t, p.ProtocolVersion, decodedPacket.ProtocolVersion)
+	assert.Equal(t, p.ServerVersion, decodedPacket.ServerVersion)
+	assert.Equal(t, p.ConnectionID, decodedPacket.ConnectionID)
+	assert.Equal(t, p.Salt1, decodedPacket.Salt1)
+	assert.Equal(t, p.ServerCapabilities, decodedPacket.ServerCapabilities)
+	assert.Equal(t, p.Charset, decodedPacket.Charset)
+	assert.Equal(t, p.Status, decodedPacket.Status)
+	assert.Equal(t, p.ExtendedServerCapabilities, decodedPacket.ExtendedServerCapabilities)
+	assert.Equal(t, p.AuthPluginName, decodedPacket.AuthPluginName)
+	assert.Equal(t, p.Salt2, decodedPacket.Salt2)
+	assert.Equal(t, p.MariaDBExtendedCapabilities, decodedPacket.MariaDBExtendedCapabilities)
+	assert.Equal(t, p.AuthPluginName, decodedPacket.AuthPluginName)
+}
+
+func TestDecodingAndEncodingHandshake(t *testing.T) {
+	// 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+	// 0 1 2 3 4 5 6 7 8 9 a b c d e f
+
+	// 1 byte = 0xff = 255 = uint8
+	// 2 byte = 0xff 0xff = MaxUint16
+	// 3 byte = 0xff 0xff = MaxUint32
+
+	//data := []byte{
+	//	// header:
+	//	0x52, 0x00, 0x00, // packet length
+	//	0x00, // packet sequence
+	//	// payload:
+	//	0x0a,                                                                                     // protocol version
+	//	0x31, 0x31, 0x2e, 0x34, 0x2e, 0x34, 0x2d, 0x4d, 0x61, 0x72, 0x69, 0x61, 0x44, 0x42, 0x00, // server version
+	//	0xb4, 0x04, 0x03, 0x00, // connection id
+	//	0x79, 0x6d, 0x35, 0x5f, 0x61, 0x47, 0x7c, 0x60, // salt (first part)
+	//	0x00,       // filler
+	//	0xfe, 0xff, // server capabilities (1st part)
+	//	0x21,       // charset
+	//	0x02, 0x00, // status
+	//	0xff, 0x81, // server capabilities (2nd part)
+	//	0x15,                                                       // auth data ?
+	//	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // filler or server capabilities 3rd part . MariaDB specific flags /* MariaDB 10.2 or later */
+	//	0x00, 0x1d, 0x00, 0x00, 0x00, 0x49, 0x2e, 0x48, 0x5f, 0x28, 0x44, 0x5e, 0x2f,
+	//	0x6c, 0x55, 0x43, 0x31, 0x00, 0x6d, 0x79, 0x73, 0x71, 0x6c, 0x5f, 0x6e, 0x61, 0x74, 0x69, 0x76,
+	//	0x65, 0x5f, 0x70, 0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x00,
+	//}
+	var data = []byte{
+		0x52, 0x0, 0x0,
+		0x0,
+		0xa,
+		0x31, 0x31, 0x2e, 0x34, 0x2e, 0x34, 0x2d, 0x4d, 0x61, 0x72, 0x69, 0x61, 0x44, 0x42, 0x0,
+		0x9f, 0x36, 0x3, 0x0, 0x79, 0x78, 0x6c, 0x37, 0x6a, 0x33, 0x5e, 0x61, 0x0, 0xfe, 0xff, 0x21, 0x2, 0x0, 0xff, 0x81, 0x15, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1d, 0x0, 0x0, 0x0, 0x4a, 0x2e, 0x45, 0x54, 0x53, 0x27, 0x64, 0x46, 0x6d, 0x73, 0x7c, 0x36, 0x0, 0x6d, 0x79, 0x73, 0x71, 0x6c, 0x5f, 0x6e, 0x61, 0x74, 0x69, 0x76, 0x65, 0x5f, 0x70, 0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x0}
+
+	assertHandshakePacket(t, data)
+
+	var secondData = []byte{0x52, 0x0, 0x0, 0x0, 0xa, 0x31, 0x31, 0x2e, 0x34, 0x2e, 0x34, 0x2d, 0x4d, 0x61, 0x72, 0x69, 0x61, 0x44, 0x42, 0x0, 0xe4, 0x3d, 0x3, 0x0, 0x5c, 0x5d, 0x40, 0x66, 0x62, 0x39, 0x34, 0x37, 0x0, 0xfe, 0xff, 0x21, 0x2, 0x0, 0xff, 0x81, 0x15, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1d, 0x0, 0x0, 0x0, 0x56, 0x2f, 0x25, 0x6c, 0x71, 0x71, 0x64, 0x22, 0x76, 0x53, 0x78, 0x26, 0x0, 0x6d, 0x79, 0x73, 0x71, 0x6c, 0x5f, 0x6e, 0x61, 0x74, 0x69, 0x76, 0x65, 0x5f, 0x70, 0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x0}
+	assertHandshakePacket(t, secondData)
+}
+
+func assertHandshakePacket(t *testing.T, data []byte) {
+	var dp, _ = newHandshakePacket().Decode(data)
+	var decodedHandshake = dp.(*HandshakePacket)
+	//var capabilities = uint64(decodedHandshake.ServerCapabilities)
+
+	//var caps = make([]string, 0)
+	//for c, n := range capabilityValueToString {
+	//	if capabilities&c != 0 {
+	//		caps = append(caps, n)
+	//	}
+	//}
+	//
+	//fmt.Println("")
+	//fmt.Println("capabilities list", caps)
+
+	var handshake = newHandshakePacket()
+	handshake.ProtocolVersion = decodedHandshake.ProtocolVersion
+	handshake.ServerVersion = decodedHandshake.ServerVersion
+	handshake.ConnectionID = decodedHandshake.ConnectionID
+	handshake.Salt1 = decodedHandshake.Salt1
+	handshake.ServerCapabilities = decodedHandshake.ServerCapabilities
+	handshake.Charset = decodedHandshake.Charset
+	handshake.Status = decodedHandshake.Status
+	handshake.ExtendedServerCapabilities = decodedHandshake.ExtendedServerCapabilities
+	handshake.AuthPluginDataLength = decodedHandshake.AuthPluginDataLength
+	handshake.Salt2 = decodedHandshake.Salt2
+	handshake.MariaDBExtendedCapabilities = decodedHandshake.MariaDBExtendedCapabilities
+	handshake.AuthPluginName = decodedHandshake.AuthPluginName
+
+	assert.Equal(t, data, handshake.Encode())
+}

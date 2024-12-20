@@ -1,4 +1,4 @@
-package user
+package session
 
 import (
 	"reflect"
@@ -19,7 +19,7 @@ func TestNewContext(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewContext(tt.args.query, tt.args.schema); !reflect.DeepEqual(got, tt.want) {
+			if got := NewContext(tt.args.schema); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewContext() = %v, want %v", got, tt.want)
 			}
 		})
